@@ -2,9 +2,11 @@ import argparse
 import signal
 
 import pyautogui
+import pydirectinput
 import PIL
 import time
 import yaml
+import cv2
 from enum import Enum
 
 
@@ -117,6 +119,19 @@ def click_on_coordinates(xc, yc, timer, break_point):
         if count >= break_point:
             break
 
+# Point In( X = 1283, Y = 853) Point Bench ( X = 1810, Y = 1000)
+def click_in_game(xc, yc, delay=0):
+    pyautogui.moveTo(xc, yc, delay)
+    pydirectinput.mouseDown(button="left")
+    time.sleep(0.05)
+    pydirectinput.mouseUp(button="left")
+
+def bench_unbench():
+    click_in_game(1283, 853, 0.5)
+    time.sleep(0.1)
+    click_in_game(1810, 1000, 0.8)
+    time.sleep(0.5)
+    click_in_game(1283, 853, 0.8)
 
 def accept_afk_check(button_img, timer):
     press_button(button_img, timer)
@@ -170,7 +185,24 @@ if __name__ == '__main__':
                             '\n\t"restart" or "play again" = start from the finishing game lobby.')
     parser.add_argument('-t', '--tokens', dest='tokens', action='store_true',
                         help='Shows the tokens that had been earned by using the bot.')
+    parser.add_argument('-q', dest='cloc', action='store_true',
+                        help='Test clicking.')
     args = parser.parse_args()
+    if args.cloc:
+        time.sleep(5)
+        # print(pyautogui.position()[0])
+        # print(pyautogui.position()[1])
+        # pyautogui.alert(str(pyautogui.position()))
+        
+        # for i in range(1,10):
+            # time.sleep(2)
+            # loc = pyautogui.locateCenterOnScreen("find_match_button.png", confidence=0.8)
+            # pyautogui.moveTo(x=loc[0], y=loc[1])
+            # pydirectinput.mouseDown(button="left")
+            # time.sleep(0.05)
+            # pydirectinput.mouseUp(button="left")
+            # exit(0)
+        exit(0)
     start_arg = StartPos.NONE
     if args.calibrate:
         log('Preparing to calibrate...', Log.ACTION)
@@ -233,7 +265,8 @@ if __name__ == '__main__':
         if start_arg is StartPos.NONE or start_arg is StartPos.ACCEPT:
             accept_afk_check('accept.png', 2)
             start_arg = StartPos.NONE
-            time.sleep(10 * 60)
+            time.sleep(1 * 60)
+
         # 'X': 1100, 'Y': 735
 
         is_exit_found = False
@@ -242,8 +275,10 @@ if __name__ == '__main__':
             start_arg = StartPos.NONE
             while not is_exit_found:
                 time.sleep(5)
+                bench_unbench()
                 img_exit = pyautogui.locateOnScreen('exit.png')
                 img_win = pyautogui.locateOnScreen('play_again.png')
+                img_mission_ok = pyautogui.locateCenterOnScreen('mission_ok.png', confidence=0.8)
                 if img_exit is not None:
                     end_time = int(time.time())
                     pyautogui.hotkey('alt', 'f4')
@@ -255,16 +290,28 @@ if __name__ == '__main__':
                 elif img_win is not None:
                     log('YOU WON A ROUND!!!', Log.INFO)  # log
                     is_exit_found = True
+                elif img_mission_ok is not None:
+                    log('Mission Complete.', Log.INFO)
+                    pyautogui.moveTo(img_mission_ok[0], img_mission_ok[1])
+                    pyautogui.click()
+                    is_exit_found = True
 
-            print('Tokens collected that far: ', tokens_collected)
+            # print('Tokens collected that far: ', tokens_collected)
         if start_arg is StartPos.NONE or start_arg is StartPos.PLAY_AGAIN:
             # For testing purposes.
-            while pyautogui.locateOnScreen('play_again.png') is None:
+            while pyautogui.locateOnScreen('play_again.png') is None and pyautogui.locateOnScreen('mission_ok.png', confidence=0.8) is None:
                 time.sleep(1)
-            tokens_collected = find_tokens_earned(tokens_collected)
+            # tokens_collected = find_tokens_earned(tokens_collected)           # ! change the images for the new set.
+            img_mission_ok = pyautogui.locateCenterOnScreen('mission_ok.png', confidence=0.8)
+            if(img_mission_ok is not None):
+                pyautogui.moveTo(img_mission_ok[0], img_mission_ok[1])
+                pyautogui.click()
+                time.sleep(2)    
+            time.sleep(2)
             pyautogui.screenshot('./screenshots/screenshot_' + str(screen_num) + '.png')
+            log("Screenshot taken.",Log.DEBUG)
             screen_num += 1
-
+            
             press_button('play_again.png', 10)
             start_arg = StartPos.NONE
             fixed_move_cursor()
