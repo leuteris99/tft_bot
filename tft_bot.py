@@ -1,8 +1,8 @@
 import argparse
 import schedule
 import signal
-
-import pyautogui
+# ! Try to change to the pydirectinput library.
+# import pydirectinput
 import pydirectinput
 import PIL
 import time
@@ -87,7 +87,7 @@ def write_yaml(file_path, data):
 
 
 def fixed_move_cursor():
-    pyautogui.moveTo(100, 100, duration=1)
+    pydirectinput.moveTo(100, 100, duration=1)
 
 
 def press_button(button_img, timer):
@@ -95,7 +95,7 @@ def press_button(button_img, timer):
     count = 0
     minutes_passed = 0
     while not in_screen:
-        if pyautogui.locateOnScreen(button_img) is None:
+        if pydirectinput.locateOnScreen(button_img) is None:
             count += 1
             if count >= 10:
                 minutes_passed += ((count * timer) / 60)
@@ -106,7 +106,7 @@ def press_button(button_img, timer):
         else:
             log(button_img + ' clicked.', Log.ACTION)  # log
             in_screen = True
-    pyautogui.click(button_img)
+    pydirectinput.click(button_img)
 
 
 # 'X': 1276, 'Y': 894
@@ -114,7 +114,7 @@ def click_on_coordinates(xc, yc, timer, break_point):
     in_screen = False
     count = 0
     while not in_screen:
-        pyautogui.click(xc, yc)
+        pydirectinput.click(xc, yc)
         count += 1
         time.sleep(timer)
         if count >= break_point:
@@ -122,10 +122,16 @@ def click_on_coordinates(xc, yc, timer, break_point):
 
 # Point In( X = 1283, Y = 853) Point Bench ( X = 1810, Y = 1000)
 def click_in_game(xc, yc, delay=0):
-    pyautogui.moveTo(xc, yc, delay)
+    pydirectinput.moveTo(xc, yc, delay)
+    # try:
+    #     pydirectinput.mouseDown(button="left")
+    # except:
     pydirectinput.mouseDown(button="left")
     time.sleep(0.05)
-    pydirectinput.mouseUp(button="left")
+    # try:
+    #     pydirectinput.mouseUp(button="left")
+    # except:
+    pydirectinput.mouseUp(button='left')
 
 def bench_unbench():
     click_in_game(1283, 853, 0.5)
@@ -141,7 +147,7 @@ def accept_afk_check(button_img, timer):
     while count <= 100:
         count += 1
         time.sleep(1)
-        if pyautogui.locateOnScreen(button_img) is not None:
+        if pydirectinput.locateOnScreen(button_img) is not None:
             press_button(button_img, timer)
             time.sleep(0.5)
             fixed_move_cursor()
@@ -149,20 +155,20 @@ def accept_afk_check(button_img, timer):
 
 
 def find_tokens_earned(tok_col):
-    if pyautogui.locateOnScreen('./place/first_place.png') is not None \
-            or pyautogui.locateOnScreen('./place/second_place.png') is not None:
+    if pydirectinput.locateOnScreen('./place/first_place.png') is not None \
+            or pydirectinput.locateOnScreen('./place/second_place.png') is not None:
         tok_col += 8
         log('finished 1st - 2nd.', Log.DEBUG)
-    elif pyautogui.locateOnScreen('./place/third_place.png') is not None \
-            or pyautogui.locateOnScreen('./place/fourth_place.png') is not None:
+    elif pydirectinput.locateOnScreen('./place/third_place.png') is not None \
+            or pydirectinput.locateOnScreen('./place/fourth_place.png') is not None:
         tok_col += 6
         log('finished 3rd - 4th.', Log.DEBUG)
-    elif pyautogui.locateOnScreen('./place/fifth_place.png') is not None \
-            or pyautogui.locateOnScreen('./place/sixth_place.png'):
+    elif pydirectinput.locateOnScreen('./place/fifth_place.png') is not None \
+            or pydirectinput.locateOnScreen('./place/sixth_place.png'):
         tok_col += 4
         log('finished 5th - 6th.', Log.DEBUG)
-    elif pyautogui.locateOnScreen('./place/seventh_place.png') is not None \
-            or pyautogui.locateOnScreen('./place/eighth_place.png'):
+    elif pydirectinput.locateOnScreen('./place/seventh_place.png') is not None \
+            or pydirectinput.locateOnScreen('./place/eighth_place.png'):
         tok_col += 2
         log('finished 7th - 8th.', Log.DEBUG)
     else:
@@ -194,14 +200,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.cloc:
         time.sleep(5)
-        # print(pyautogui.position()[0])
-        # print(pyautogui.position()[1])
-        # pyautogui.alert(str(pyautogui.position()))
+        # print(pydirectinput.position()[0])
+        # print(pydirectinput.position()[1])
+        # pydirectinput.alert(str(pydirectinput.position()))
         
         # for i in range(1,10):
             # time.sleep(2)
-            # loc = pyautogui.locateCenterOnScreen("find_match_button.png", confidence=0.8)
-            # pyautogui.moveTo(x=loc[0], y=loc[1])
+            # loc = pydirectinput.locateCenterOnScreen("find_match_button.png", confidence=0.8)
+            # pydirectinput.moveTo(x=loc[0], y=loc[1])
             # pydirectinput.mouseDown(button="left")
             # time.sleep(0.05)
             # pydirectinput.mouseUp(button="left")
@@ -215,7 +221,7 @@ if __name__ == '__main__':
             log(str(rev_clock), Log.INFO)  # log
             rev_clock -= 1
             time.sleep(1)
-        pos = pyautogui.position()
+        pos = pydirectinput.position()
         d = dict(
             CALIBRATION=dict(
                 X=pos.x,
@@ -232,7 +238,7 @@ if __name__ == '__main__':
             log(str(rev_clock), Log.INFO)  # log
             rev_clock -= 1
             time.sleep(1)
-        img = pyautogui.screenshot('screenshot.png')
+        img = pydirectinput.screenshot('screenshot.png')
         exit(0)
     elif args.starting_argument:
         if args.starting_argument == 'find'\
@@ -283,13 +289,13 @@ if __name__ == '__main__':
             while not is_exit_found:
                 time.sleep(5)
                 bench_unbench()
-                img_exit = pyautogui.locateOnScreen('exit.png')
-                img_win = pyautogui.locateOnScreen('play_again.png')
-                img_mission_ok = pyautogui.locateCenterOnScreen('mission_ok.png', confidence=0.8)
+                img_exit = pydirectinput.locateOnScreen('exit.png')
+                img_win = pydirectinput.locateOnScreen('play_again.png')
+                img_mission_ok = pydirectinput.locateCenterOnScreen('mission_ok.png', confidence=0.8)
                 if img_exit is not None:
                     end_time = int(time.time())
-                    pyautogui.hotkey('alt', 'f4')
-                    pyautogui.hotkey('alt', 'f4')
+                    pydirectinput.hotkey('alt', 'f4')
+                    pydirectinput.hotkey('alt', 'f4')
                     minutes = int((end_time - start_time) / 60)
                     seconds = int((end_time - start_time) % 60)
                     log('Time elapsed: ' + str(minutes) + ' Minutes and ' + str(seconds) + ' Seconds.', Log.INFO)  # log
@@ -299,24 +305,24 @@ if __name__ == '__main__':
                     is_exit_found = True
                 elif img_mission_ok is not None:
                     log('Mission Complete.', Log.INFO)
-                    pyautogui.moveTo(img_mission_ok[0], img_mission_ok[1])
-                    pyautogui.click()
+                    pydirectinput.moveTo(img_mission_ok[0], img_mission_ok[1])
+                    pydirectinput.click()
                     is_exit_found = True
                 schedule.run_pending()
 
             # print('Tokens collected that far: ', tokens_collected)
         if start_arg is StartPos.NONE or start_arg is StartPos.PLAY_AGAIN:
             # For testing purposes.
-            while pyautogui.locateOnScreen('play_again.png') is None and pyautogui.locateOnScreen('mission_ok.png', confidence=0.8) is None:
+            while pydirectinput.locateOnScreen('play_again.png') is None and pydirectinput.locateOnScreen('mission_ok.png', confidence=0.8) is None:
                 time.sleep(1)
             # tokens_collected = find_tokens_earned(tokens_collected)           # ! change the images for the new set.
-            img_mission_ok = pyautogui.locateCenterOnScreen('mission_ok.png', confidence=0.8)
+            img_mission_ok = pydirectinput.locateCenterOnScreen('mission_ok.png', confidence=0.8)
             if(img_mission_ok is not None):
-                pyautogui.moveTo(img_mission_ok[0], img_mission_ok[1])
-                pyautogui.click()
+                pydirectinput.moveTo(img_mission_ok[0], img_mission_ok[1])
+                pydirectinput.click()
                 time.sleep(2)    
             time.sleep(2)
-            pyautogui.screenshot('./screenshots/tmp_place/screenshot_' + str(screen_num) + '.png')
+            pydirectinput.screenshot('./screenshots/tmp_place/screenshot_' + str(screen_num) + '.png')
             log("Screenshot taken.",Log.DEBUG)
             screen_num += 1
             
