@@ -1,4 +1,5 @@
 import argparse
+import schedule
 import signal
 
 import pyautogui
@@ -168,6 +169,9 @@ def find_tokens_earned(tok_col):
         log('UNKNOWN FINISH PLACEMENT.', Log.ERROR)
     return tok_col
 
+def isClientStuck():
+    pass
+
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, on_exit)
@@ -256,6 +260,9 @@ if __name__ == '__main__':
     tokens_count = settings['INFO']['TOKENS_COLLECTED']
     tokens_collected = 0
     log('Starting the bot...', Log.ACTION)  # log
+
+    schedule.every(1).minutes.do(isClientStuck)
+
     screen_num = 0
     while True:
         start_time = int(time.time())
@@ -295,6 +302,7 @@ if __name__ == '__main__':
                     pyautogui.moveTo(img_mission_ok[0], img_mission_ok[1])
                     pyautogui.click()
                     is_exit_found = True
+                schedule.run_pending()
 
             # print('Tokens collected that far: ', tokens_collected)
         if start_arg is StartPos.NONE or start_arg is StartPos.PLAY_AGAIN:
