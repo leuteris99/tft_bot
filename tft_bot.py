@@ -308,7 +308,7 @@ if __name__ == '__main__':
                 pyautogui.click()
                 time.sleep(2)    
             time.sleep(2)
-            pyautogui.screenshot('./screenshots/screenshot_' + str(screen_num) + '.png')
+            pyautogui.screenshot('./screenshots/tmp_place/screenshot_' + str(screen_num) + '.png')
             log("Screenshot taken.",Log.DEBUG)
             screen_num += 1
             
