@@ -1,0 +1,10 @@
+{
+    "Client": {
+        "path": "C:/Riot Games/League of Legends",
+        "Settings": {
+            "in_game_path": "/Config/game.cfg",
+            "bot_preferences": "./configs/in_game_settings/bot_pref.cfg",
+            "user_preferences": "./configs/in_game_settings/user_pref.cfg"
+        }
+    }
+}
