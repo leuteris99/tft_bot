@@ -1,17 +1,18 @@
 import argparse
 import schedule
 import signal
-# ! Try to change to the pydirectinput library.
 import pyautogui
 import pydirectinput
-import pyscreeze
+import pyscreeze as psc
+import pytesseract
+from pytesseract import Output
 import PIL
-import time
+from time import sleep, time
+from os import remove as remove_file
 import yaml
 import cv2
 from enum import Enum
-import json
-
+from config_manager import ConfigManager, Pref
 
 IS_EXITING = False
 
@@ -59,8 +60,14 @@ def on_exit(signum, frame):
             if res == "n" or res == "no" or res == "No" or res == "N" or res == "NO" or res == "":
                 IS_EXITING = True
                 return
+        set_config_to_user()
         save_on_exit()
         exit(1)
+
+def set_config_to_user() -> None:
+    manager = ConfigManager()
+    manager.change_config(Pref.USER)
+    manager.save()
 
 
 def save_on_exit():
@@ -104,7 +111,7 @@ def press_button(button_img, timer):
                 log('Searching for ' + button_img + '. Minutes Passed Searching: '
                     + str(minutes_passed), Log.ACTION)  # log
                 count = 0
-            time.sleep(timer)
+            sleep(timer)
         else:
             log(button_img + ' clicked.', Log.ACTION)  # log
             in_screen = True
@@ -119,7 +126,7 @@ def click_on_coordinates(xc, yc, timer, break_point):
     while not in_screen:
         pydirectinput.click(xc, yc)
         count += 1
-        time.sleep(timer)
+        sleep(timer)
         if count >= break_point:
             break
 
@@ -130,7 +137,7 @@ def click_in_game(xc, yc, delay=0):
     #     pydirectinput.mouseDown(button="left")
     # except:
     pydirectinput.mouseDown(button="left")
-    time.sleep(0.05)
+    sleep(0.05)
     # try:
     #     pydirectinput.mouseUp(button="left")
     # except:
@@ -138,9 +145,9 @@ def click_in_game(xc, yc, delay=0):
 
 def bench_unbench():
     click_in_game(1283, 853, 0.5)
-    time.sleep(0.1)
+    sleep(0.1)
     click_in_game(1810, 1000, 0.8)
-    time.sleep(0.5)
+    sleep(0.5)
     click_in_game(1283, 853, 0.8)
 
 def accept_afk_check(button_img, timer):
@@ -149,10 +156,10 @@ def accept_afk_check(button_img, timer):
     count = 0
     while count <= 100:
         count += 1
-        time.sleep(1)
+        sleep(1)
         if pyautogui.locateOnScreen(button_img) is not None:
             press_button(button_img, timer)
-            time.sleep(0.5)
+            sleep(0.5)
             fixed_move_cursor()
             count = 0
 
@@ -181,6 +188,29 @@ def find_tokens_earned(tok_col):
 def isClientStuck():
     pass
 
+def exit_when_lose() -> bool:
+    filename = 'tmp.png'
+    psc.screenshot(filename)
+    image = cv2.imread(filename)
+    remove_file(filename)
+    results = pytesseract.image_to_data(image=image,output_type=Output.DICT)
+    for i in range(0,len(results['text'])):
+        exiters = [
+            'exit',
+            'watching',
+            'finished'
+        ]
+        for exiter in exiters:
+            if exiter in results['text'][i].lower():
+                end_time = int(time())
+                pyautogui.hotkey('alt', 'f4')
+                pyautogui.hotkey('alt', 'f4')
+                minutes = int((end_time - start_time) / 60)
+                seconds = int((end_time - start_time) % 60)
+                log('Time elapsed: ' + str(minutes) + ' Minutes and ' + str(seconds) + ' Seconds.', Log.INFO)  # log
+                return True
+    return False
+
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, on_exit)
@@ -198,39 +228,30 @@ if __name__ == '__main__':
                             '\n\t"restart" or "play again" = start from the finishing game lobby.')
     parser.add_argument('-t', '--tokens', dest='tokens', action='store_true',
                         help='Shows the tokens that had been earned by using the bot.')
-    parser.add_argument('-q', dest='cloc', action='store_true',
-                        help='Test clicking.')
+    parser.add_argument('-cm', '--config', '--config-manager', type=str, dest='config',
+                        help='Set the in-game settings manually.'
+                            "\n\t'user' to change the settings to the user's prefered."
+                            "\n\t'bot' to change the settings to the bot's prefered.")
     args = parser.parse_args()
 
-    f = open("./configs/settings.json")
-    config = json.load(f)
-    f.close()
-    client_f = open(config['Client']['path'] + config["Client"]["Settings"]["in_game_path"],'w')
-    user_f = open(config["Client"]["Settings"]["user_preferences"],"r")
-    # TODO: use configparser library.
-    if args.cloc:
-        time.sleep(5)
-        # print(pydirectinput.position()[0])
-        # print(pydirectinput.position()[1])
-        # pydirectinput.alert(str(pydirectinput.position()))
-        
-        # for i in range(1,10):
-            # time.sleep(2)
-            # loc = pydirectinput.locateCenterOnScreen("find_match_button.png", confidence=0.8)
-            # pydirectinput.moveTo(x=loc[0], y=loc[1])
-            # pydirectinput.mouseDown(button="left")
-            # time.sleep(0.05)
-            # pydirectinput.mouseUp(button="left")
-            # exit(0)
-        exit(0)
     start_arg = StartPos.NONE
+    if args.config:
+        log(f'Setting the game configuration manually to {args.config} profile.',Log.INFO)
+        manager = ConfigManager()
+        pref = Pref.set_pref(args.config)
+        if pref is None:
+            raise ValueError(f'Incompatable Configuration profile {args.config}')
+        manager.change_config(pref)
+        manager.save()
+        log(f"Active config file: {manager.active().name}",Log.INFO)
+        exit(0)
     if args.calibrate:
         log('Preparing to calibrate...', Log.ACTION)
         rev_clock = 3
         while rev_clock > 0:
             log(str(rev_clock), Log.INFO)  # log
             rev_clock -= 1
-            time.sleep(1)
+            sleep(1)
         pos = pydirectinput.position()
         d = dict(
             CALIBRATION=dict(
@@ -247,9 +268,9 @@ if __name__ == '__main__':
         while rev_clock > 0:
             log(str(rev_clock), Log.INFO)  # log
             rev_clock -= 1
-            time.sleep(1)
+            sleep(1)
         try:
-            img = pyscreeze.screenshot('screenshot.png')
+            img = psc.screenshot('screenshot.png')
         except:
             log('error taking screenshot.',Log.ERROR)
         exit(0)
@@ -279,19 +300,23 @@ if __name__ == '__main__':
     tokens_count = settings['INFO']['TOKENS_COLLECTED']
     tokens_collected = 0
     log('Starting the bot...', Log.ACTION)  # log
+    manager = ConfigManager()
+    manager.change_config(Pref.BOT)
+    log('Change the in-game settings according to the Bot\'s preference.',Log.ACTION)
+    manager.save()
 
     schedule.every(1).minutes.do(isClientStuck)
 
     screen_num = 0
     while True:
-        start_time = int(time.time())
+        start_time = int(time())
         if start_arg is StartPos.NONE or start_arg is StartPos.FIND:
             press_button('find_match_button.png', 3)
             start_arg = StartPos.NONE
         if start_arg is StartPos.NONE or start_arg is StartPos.ACCEPT:
             accept_afk_check('accept.png', 2)
             start_arg = StartPos.NONE
-            time.sleep(1 * 60)
+            sleep(1 * 60)
 
         # 'X': 1100, 'Y': 735
 
@@ -300,18 +325,16 @@ if __name__ == '__main__':
         if start_arg is StartPos.NONE or start_arg is StartPos.EXIT:
             start_arg = StartPos.NONE
             while not is_exit_found:
-                time.sleep(5)
+                sleep(5)
                 bench_unbench()
-                img_file = pyscreeze.grab() # todo: make the code able to find the button
-                if pyautogui.locate(img_file,'exit.png') is None:
-                    print('Exit not Found.')
-                else:
-                    print("Exit Found!")
+
+                is_exit_found = exit_when_lose()
+
                 img_exit = pyautogui.locateOnScreen('exit.png')
                 img_win = pyautogui.locateOnScreen('play_again.png')
                 img_mission_ok = pyautogui.locateCenterOnScreen('mission_ok.png', confidence=0.8)
                 if img_exit is not None:
-                    end_time = int(time.time())
+                    end_time = int(time())
                     pyautogui.hotkey('alt', 'f4')
                     pyautogui.hotkey('alt', 'f4')
                     minutes = int((end_time - start_time) / 60)
@@ -332,16 +355,16 @@ if __name__ == '__main__':
         if start_arg is StartPos.NONE or start_arg is StartPos.PLAY_AGAIN:
             # For testing purposes.
             while pyautogui.locateOnScreen('play_again.png') is None and pyautogui.locateOnScreen('mission_ok.png', confidence=0.8) is None:
-                time.sleep(1)
+                sleep(1)
             # tokens_collected = find_tokens_earned(tokens_collected)           # ! change the images for the new set.
             img_mission_ok = pyautogui.locateCenterOnScreen('mission_ok.png', confidence=0.8)
             if(img_mission_ok is not None):
                 pydirectinput.moveTo(img_mission_ok[0], img_mission_ok[1])
                 pydirectinput.click()
-                time.sleep(2)    
-            time.sleep(2)
+                sleep(2)    
+            sleep(2)
             try:
-                pyscreeze.screenshot('./screenshots/tmp_place/screenshot_' + str(screen_num) + '.png')
+                psc.screenshot('./screenshots/tmp_place/screenshot_' + str(screen_num) + '.png')
             except:
                 log('error on screenshot.',Log.ERROR)
             log("Screenshot taken.",Log.DEBUG)
@@ -351,5 +374,6 @@ if __name__ == '__main__':
             start_arg = StartPos.NONE
             fixed_move_cursor()
         if IS_EXITING:
+            set_config_to_user()
             save_on_exit()
             break
