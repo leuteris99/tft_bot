@@ -68,6 +68,7 @@ def set_config_to_user() -> None:
     manager = ConfigManager()
     manager.change_config(Pref.USER)
     manager.save()
+    log("Config set to user's preferences.",Log.INFO)
 
 
 def save_on_exit():
