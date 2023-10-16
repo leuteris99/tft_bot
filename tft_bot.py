@@ -151,6 +151,11 @@ def bench_unbench():
     sleep(0.5)
     click_in_game(1283, 853, 0.8)
 
+def level_up():
+    pyautogui.keyDown('d')
+    sleep(0.1)
+    pyautogui.keyUp('d')
+
 def accept_afk_check(button_img, timer):
     press_button(button_img, timer)
     fixed_move_cursor()
@@ -327,7 +332,8 @@ if __name__ == '__main__':
             start_arg = StartPos.NONE
             while not is_exit_found:
                 sleep(5)
-                bench_unbench()
+                # bench_unbench()
+                level_up()
 
                 is_exit_found = exit_when_lose()
 
